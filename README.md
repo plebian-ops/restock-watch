@@ -10,7 +10,7 @@ Checks the product pages in `links.txt` with Screaming Frog, on GitHub's compute
 
 ## Timing
 
-Once an hour in November, every 15 minutes in December. Nothing is set after December.
+Once an hour in November. Every 15 minutes from December 1, 12:00 AM Manila time, and ongoing until it is paused.
 
 - Start one by hand: Actions > Stock check > Run workflow.
 - Pause: Actions > Stock check > ... > Disable workflow.

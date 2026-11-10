@@ -1,12 +1,17 @@
 name: Stock check
 
-# Runs by itself: once an hour in November, every 15 minutes in December. Nothing is set after December.
-# GitHub's clock is UTC, 8 hours behind Manila. The minutes are kept off :00, :15, :30 and :45, GitHub's busiest.
+# Runs by itself: once an hour in November, then every 15 minutes from December 1, 12:00 AM Manila time, and ongoing.
+# GitHub's clock is UTC, 8 hours behind Manila, so December 1 12:00 AM Manila is November 30 16:00 here.
+# The minutes are kept off :00, :15, :30 and :45, GitHub's busiest.
 # It can also be started by hand from the Actions tab. To pause it: Actions > Stock check > ... > Disable workflow.
+# The November lines repeat every year. To keep 15 minutes through a later November, replace all four lines
+# with one: '8,23,38,53 * * * *'.
 on:
   schedule:
-    - cron: '23 * * 11 *'
-    - cron: '8,23,38,53 * * 12 *'
+    - cron: '23 * 1-29 11 *'              # November 1 to 29: once an hour
+    - cron: '23 0-15 30 11 *'             # November 30 until 11:23 PM Manila: once an hour
+    - cron: '8,23,38,53 16-23 30 11 *'    # from December 1, 12:00 AM Manila: every 15 minutes
+    - cron: '8,23,38,53 * * 1-10,12 *'    # December onwards: every 15 minutes
   workflow_dispatch: {}
 
 permissions:
