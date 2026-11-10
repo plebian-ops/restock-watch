@@ -1,0 +1,44 @@
+{
+  "https://www.everythingcalligraphy.com/products/travelers-notebook-20th-anniversary-set-card-size?_pos=9&_sid=1b7824707&_ss=r": {
+    "verdict": "SOLD OUT",
+    "title": "Traveler's Notebook 20th Anniversary Set (Card Size) - Everything Calligraphy",
+    "items": [
+      {
+        "name": "Traveler's Notebook 20th Anniversary Set (Card Size) - Black",
+        "price": "5995.00 PHP",
+        "availability": "OutOfStock"
+      },
+      {
+        "name": "Traveler's Notebook 20th Anniversary Set (Card Size) - Brown",
+        "price": "5995.00 PHP",
+        "availability": "OutOfStock"
+      }
+    ],
+    "labels": [
+      "Sold out"
+    ],
+    "buyButton": "",
+    "notes": [],
+    "changedAt": "2026-11-10T10:03:02.532Z"
+  },
+  "https://shop.travelerscompanyusa.com/collections/20th-anniversary/products/travelers-notebook-card-size-20th-anniversary-set-brown": {
+    "verdict": "SOLD OUT",
+    "title": "20th Anniversary Card Size Set Brown - TRAVELER'S COMPANY USA",
+    "items": [
+      {
+        "name": "20th Anniversary Card Size Set Brown",
+        "price": "98.00 USD",
+        "availability": "OutOfStock"
+      }
+    ],
+    "labels": [
+      "Currently Unavailable"
+    ],
+    "buyButton": "Unavailable (switched off)",
+    "notes": [
+      "Limit to 1 pc per order.",
+      "Next restock at end of December."
+    ],
+    "changedAt": "2026-11-10T10:08:56.371Z"
+  }
+}

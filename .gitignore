@@ -1,0 +1,6 @@
+out/
+crawl.log
+install.log
+sf.deb
+alerts.json
+alert-body.md
