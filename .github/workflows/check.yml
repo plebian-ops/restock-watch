@@ -97,6 +97,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_TEST_TEXT: ${{ secrets.TELEGRAM_TEST_TEXT }}
         run: node send-alert.js ${{ inputs.test_alert && '--test' || '' }}
 
       - name: Alert

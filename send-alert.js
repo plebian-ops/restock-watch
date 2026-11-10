@@ -12,20 +12,23 @@ const when = d => d.toLocaleString('en-US', { timeZone: 'Asia/Manila', month: 's
     console.log('Telegram is not set up yet, nothing sent.');
     return;
   }
-  const alerts = fs.existsSync('alerts.json') ? JSON.parse(fs.readFileSync('alerts.json', 'utf8')) : [];
+  const messages = (fs.existsSync('alerts.json') ? JSON.parse(fs.readFileSync('alerts.json', 'utf8')) : [])
+    .map(a => ({ label: a.title, text: a.title + '\n\n' + a.body }));
   if (process.argv.includes('--test')) {
-    alerts.push({ title: 'Test alert', body: 'This is a test from the stock check. A real alert looks like this and carries the product link.\n\nSent ' + when(new Date()) });
+    // The test wording comes from the project secret TELEGRAM_TEST_TEXT when it is set.
+    const own = (process.env.TELEGRAM_TEST_TEXT || '').trim();
+    messages.push({ label: 'test message', text: own || 'Test alert\n\nThis is a test from the stock check. A real alert looks like this and carries the product link.\n\nSent ' + when(new Date()) });
   }
   let failed = 0;
-  for (const a of alerts) {
+  for (const m of messages) {
     for (const chat of chats) {
       const res = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chat_id: chat, text: a.title + '\n\n' + a.body }),
+        body: JSON.stringify({ chat_id: chat, text: m.text }),
       });
       const j = await res.json().catch(() => ({}));
-      if (j.ok) console.log('sent: ' + a.title);
+      if (j.ok) console.log('sent: ' + m.label);
       else { failed++; console.log('Telegram did not accept the message: ' + (j.description || res.status)); }
     }
   }
