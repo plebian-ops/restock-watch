@@ -9,9 +9,13 @@ Checks the product pages in `links.txt` with Screaming Frog, on GitHub's compute
 - The same alert is sent to Telegram when the project secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set. "Run workflow" has a tick box that also sends a test alert.
 - A run that cannot read a link ends as failed.
 
+## Asking the bot
+
+Send "check" or "check stock" to the Telegram bot. "Reply to chat" looks for new messages every 5 minutes, runs a fresh check and replies in the chat with each store, in stock or sold out, and its link. Only the chats listed in `TELEGRAM_CHAT_ID` get a reply.
+
 ## Timing
 
 Once an hour in November. Every 15 minutes from December 1, 12:00 AM Manila time, and ongoing until it is paused.
 
 - Start one by hand: Actions > Stock check > Run workflow.
-- Pause: Actions > Stock check > ... > Disable workflow.
+- Pause: Actions > Stock check > ... > Disable workflow. The replies have their own switch under "Reply to chat".

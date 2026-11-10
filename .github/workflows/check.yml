@@ -34,51 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Screaming Frog installer (kept between runs)
-        id: sfcache
-        uses: actions/cache@v4
-        with:
-          path: sf.deb
-          key: screamingfrog-25.1-deb
-
-      - name: Download Screaming Frog 25.1
-        if: steps.sfcache.outputs.cache-hit != 'true'
-        run: curl -fsSL -o sf.deb https://download.screamingfrog.co.uk/products/seo-spider/screamingfrogseospider_25.1_amd64.deb
-
-      - name: Install Screaming Frog
-        run: |
-          echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections
-          sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ./sf.deb > install.log 2>&1 || { tail -n 40 install.log; exit 1; }
-          mkdir -p ~/.ScreamingFrogSEOSpider
-          printf 'eula.accepted=16\n' > ~/.ScreamingFrogSEOSpider/spider.config
-
-      # Keeps a copy of each product page exactly as Screaming Frog receives it, so the page itself can be read.
-      - name: Page saver
-        run: |
-          python3 -m venv /tmp/saver-venv
-          /tmp/saver-venv/bin/pip install --quiet mitmproxy==12.3.1
-          chmod -R a+rX /tmp/saver-venv
-          sudo useradd --create-home --shell /bin/bash saver
-          sudo mkdir -p /tmp/captured && sudo chmod 777 /tmp/captured
-          sudo touch /tmp/saver.log && sudo chmod 666 /tmp/saver.log
-          sudo cp save-pages.py /tmp/save-pages.py && sudo chmod 644 /tmp/save-pages.py
-          sudo -u saver -H bash -c 'nohup /tmp/saver-venv/bin/mitmdump --mode transparent --listen-port 8080 --showhost -s /tmp/save-pages.py > /tmp/saver.log 2>&1 &'
-          for i in $(seq 1 20); do sudo test -f /home/saver/.mitmproxy/mitmproxy-ca-cert.pem && break; sleep 1; done
-          sudo test -f /home/saver/.mitmproxy/mitmproxy-ca-cert.pem || { echo "page saver did not start"; cat /tmp/saver.log; exit 1; }
-          sudo cp /home/saver/.mitmproxy/mitmproxy-ca-cert.pem /tmp/saver-ca.pem && sudo chmod 644 /tmp/saver-ca.pem
-          sudo keytool -importcert -noprompt -trustcacerts -alias pagesaver -file /tmp/saver-ca.pem -keystore /usr/share/screamingfrogseospider/jre/lib/security/cacerts -storepass changeit 2>&1 | tail -n 1
-          sudo sysctl -q -w net.ipv4.ip_forward=1 net.ipv4.conf.all.send_redirects=0
-
       - name: Crawl the links
-        run: |
-          mkdir -p out
-          sudo iptables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner saver --dport 443 -j REDIRECT --to-port 8080
-          screamingfrogseospider --headless --crawl-list "$PWD/links.txt" --output-folder "$PWD/out" --overwrite --export-format csv --export-tabs "Internal:All,Response Codes:All" > crawl.log 2>&1 || echo "crawl exit code: $?"
-          sudo iptables -t nat -D OUTPUT -p tcp -m owner ! --uid-owner saver --dport 443 -j REDIRECT --to-port 8080
-          grep -E "SpiderProgress" crawl.log | tail -n 1 | sed -E 's/^.*INFO +- //' || true
-          grep -E -A1 "FATAL" crawl.log | head -n 6 || true
-          echo "pages saved: $(ls /tmp/captured/*.html 2>/dev/null | wc -l)"
+        uses: ./.github/actions/crawl
 
       - name: Read the pages and compare with the last check
         id: read
@@ -90,7 +47,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add state/last.json
-          git commit -q -m "Reading changed" && git push -q
+          git commit -q -m "Reading changed" || exit 0
+          git push -q || { git fetch -q origin main && git reset -q --hard origin/main; }
 
       - name: Alert on the phone
         if: always() && (steps.read.outputs.alert == 'true' || inputs.test_alert)

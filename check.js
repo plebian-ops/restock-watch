@@ -53,6 +53,7 @@ if (fs.existsSync(pagesFolder)) {
 
 const lines = [];
 const alerts = [];
+const readings = [];   // the current status of each link, for the reply to a "check" message
 let unreadable = false, save = false;
 
 for (const link of links) {
@@ -64,12 +65,14 @@ for (const link of links) {
   if (code !== '200' || !page || !fs.existsSync(page.file)) {
     unreadable = true;
     lines.push('  COULD NOT READ: response code ' + code + (page ? '' : ', page not saved'));
+    readings.push({ link, host, readable: false });
     continue;
   }
   const r = readPage(fs.readFileSync(page.file, 'utf8'));
   if (r.verdict === 'UNKNOWN') {
     unreadable = true;
     lines.push('  COULD NOT READ: the page has no product data');
+    readings.push({ link, host, readable: false });
     continue;
   }
   const reading = {
@@ -80,6 +83,7 @@ for (const link of links) {
     buyButton: r.buyButton ? (r.buyButton.text || '') + (r.buyButton.disabled ? ' (switched off)' : '') : '',
     notes: r.notes,
   };
+  readings.push({ link, host, readable: true, title: reading.title, verdict: reading.verdict, items: reading.items.map(i => ({ name: i.name, availability: i.availability })) });
   lines.push('  ' + reading.verdict + (page.agent ? '   [fetched by ' + page.agent + ']' : ''));
   for (const i of reading.items) lines.push('    ' + i.name + ', ' + i.price + ': ' + plain(i.availability));
   if (reading.labels.length) lines.push('    label on page: ' + reading.labels.join(' / '));
@@ -150,6 +154,7 @@ if (save) {
   fs.writeFileSync(stateFile, JSON.stringify(next, null, 2) + '\n');
 }
 fs.writeFileSync(path.join(__dirname, 'alerts.json'), JSON.stringify(alerts, null, 2) + '\n');
+fs.writeFileSync(path.join(__dirname, 'reading.json'), JSON.stringify(readings, null, 2) + '\n');
 
 const text = lines.join('\n');
 console.log(text);

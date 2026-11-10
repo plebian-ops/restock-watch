@@ -1,0 +1,75 @@
+name: Reply to chat
+
+# Looks every 5 minutes for a "check" or "check stock" message sent to the Telegram bot.
+# When there is one, it runs a fresh check and replies in that chat with each store's status and link.
+# Only the chats listed in the project secret TELEGRAM_CHAT_ID get a reply.
+# To pause it: Actions > Reply to chat > ... > Disable workflow.
+on:
+  schedule:
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 * * * *'
+  workflow_dispatch:
+    inputs:
+      to_everyone:
+        description: Send the current stock to everyone on the list now
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: reply-chat
+  cancel-in-progress: false
+
+jobs:
+  reply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read new messages
+        id: listen
+        run: node listen.js ${{ inputs.to_everyone && '--everyone' || '' }}
+
+      - name: Crawl the links
+        if: steps.listen.outputs.ask == 'true'
+        uses: ./.github/actions/crawl
+
+      - name: Read the pages and compare with the last check
+        id: read
+        if: steps.listen.outputs.ask == 'true'
+        run: node check.js out /tmp/captured
+
+      - name: Reply
+        if: always() && steps.listen.outputs.ask == 'true'
+        run: node reply.js
+
+      - name: Save the new reading
+        if: always() && steps.read.outputs.save == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/last.json
+          git commit -q -m "Reading changed" || exit 0
+          git push -q || { git fetch -q origin main && git reset -q --hard origin/main; }
+
+      - name: Alert on the phone
+        if: always() && steps.read.outputs.alert == 'true'
+        run: node send-alert.js
+
+      - name: Alert
+        if: always() && steps.read.outputs.alert == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node -e "
+          const fs=require('fs');const {execFileSync}=require('child_process');
+          for(const a of JSON.parse(fs.readFileSync('alerts.json','utf8'))){
+            fs.writeFileSync('alert-body.md',a.body);
+            execFileSync('gh',['issue','create','--title',a.title,'--body-file','alert-body.md','--assignee','${{ github.repository_owner }}'],{stdio:'inherit'});
+          }"
