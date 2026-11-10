@@ -6,6 +6,7 @@ Checks the product pages in `links.txt` with Screaming Frog, on GitHub's compute
 - Each page is saved exactly as Screaming Frog receives it and read by `read-page.js`: status per colour, the label on the page, the buy button, any restock note.
 - `state/last.json` holds the last reading of each page. A run reports SOLD OUT or IN STOCK for each link and what changed since the last check.
 - An alert goes out only on a stock change: the run opens an issue titled "IN STOCK" when an item becomes available, and "SOLD OUT" when it sells out again. Other page changes are saved without an alert.
+- The same alert is sent to Telegram when the project secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` are set. "Run workflow" has a tick box that also sends a test alert.
 - A run that cannot read a link ends as failed.
 
 ## Timing

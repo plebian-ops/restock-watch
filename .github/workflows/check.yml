@@ -12,7 +12,12 @@ on:
     - cron: '23 0-15 30 11 *'             # November 30 until 11:23 PM Manila: once an hour
     - cron: '8,23,38,53 16-23 30 11 *'    # from December 1, 12:00 AM Manila: every 15 minutes
     - cron: '8,23,38,53 * * 1-10,12 *'    # December onwards: every 15 minutes
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: Also send a test alert to the phone
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -86,6 +91,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add state/last.json
           git commit -q -m "Reading changed" && git push -q
+
+      - name: Alert on the phone
+        if: always() && (steps.read.outputs.alert == 'true' || inputs.test_alert)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node send-alert.js ${{ inputs.test_alert && '--test' || '' }}
 
       - name: Alert
         if: always() && steps.read.outputs.alert == 'true'
